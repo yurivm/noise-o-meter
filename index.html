@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>NoseUp - are we loud yet?</title>
+    <style>
+    * { font-family:tahoma; font-size:12px; padding:0px;margin:0px;}
+
+    p { line-height:18px; }
+
+    div { width:800px; margin-left:auto; margin-right:auto;}
+    #content { }
+    #e {
+      margin-top: 20px; margin-bottom: 20px;
+    }
+    #e span {
+      font-size:64px;
+    }
+    #e h2 {
+      margin-top: 20px; margin-bottom: 20px;
+    }
+    #plotly {
+      width: 600px;
+      height: 400px;
+    }
+
+    #status { width:88px;display:blockmargin-top:15px; }
+  </style>
+  <script src="./plotly-latest.min.js"></script>
+  </head>
+  <body>
+    <div id="content">
+      <div id="timestamp"></div>
+      <div id="e">
+        <h2>Sound intensity</h2>
+        <!-- <span> Please wait </span> -->
+      </div>
+      <div id="plotly">
+      </div>
+      <div id="plotly_series">
+      </div>
+      <div id="controls">
+        <button id="connect" onclick="connect();">Connect</button>
+        <button id="disconnect" onclick="disconnect();">Disconnect</button>
+
+      </div>
+    </div>
+    <br>
+    <div>
+      <span id="status">Connecting...</span>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+    <script src="./frontend.js"></script>
+  </body>
+</html>
