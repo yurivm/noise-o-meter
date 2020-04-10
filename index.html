@@ -1,55 +1,95 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>NoseUp - are we loud yet?</title>
-    <style>
-    * { font-family:tahoma; font-size:12px; padding:0px;margin:0px;}
-
-    p { line-height:18px; }
-
-    div { width:800px; margin-left:auto; margin-right:auto;}
-    #content { }
-    #e {
-      margin-top: 20px; margin-bottom: 20px;
-    }
-    #e span {
-      font-size:64px;
-    }
-    #e h2 {
-      margin-top: 20px; margin-bottom: 20px;
-    }
-    #plotly {
-      width: 600px;
-      height: 400px;
-    }
-
-    #status { width:88px;display:blockmargin-top:15px; }
-  </style>
-  <script src="./plotly-latest.min.js"></script>
-  </head>
-  <body>
-    <div id="content">
-      <div id="timestamp"></div>
-      <div id="e">
-        <h2>Sound intensity</h2>
-        <!-- <span> Please wait </span> -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <title>Noise-o-meter: are we loud yet?</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+  <script src="./src/plotly-latest.min.js"></script>
+</head>
+<body>
+  <nav class="navbar navbar-expand-md navbar-dark bg-dark mb-3">
+      <div class="container-fluid">
+          <a href="#" class="navbar-brand mr-3">Noise-o-meter</a>
+          <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
+              <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+              <div class="navbar-nav">
+                  <a href="#" class="nav-item nav-link active">Plot.ly</a>
+                  <!-- <a href="#" class="nav-item nav-link">Highcharts</a> -->
+                  <a href="#configuration" class="nav-item nav-link">Configure</a>
+                  <a href="#" class="nav-item nav-link">About</a>
+              </div>
+          </div>
       </div>
-      <div id="plotly">
-      </div>
-      <div id="plotly_series">
-      </div>
-      <div id="controls">
-        <button id="connect" onclick="connect();">Connect</button>
-        <button id="disconnect" onclick="disconnect();">Disconnect</button>
+  </nav>
+  <div class="container">
+      <div class="jumbotron">
+          <h1>How loud it is in your office at the moment?</h1>
+          <p class="lead">Check it out!</p>
+  <!--         <p><a href="https://www.tutorialrepublic.com" target="_blank" class="btn btn-success btn-lg">Get started today</a></p>
+   -->    </div>
+      <div class="row">
+          <div class="col-md-8 col-lg-6 col-xl-5">
+            <div id="plotly">
+            </div>
+          </div>
+          <div class="col-md-8 col-lg-6 col-xl-6">
+            <div id="ok_meter">
 
+            </div>
+          </div>
+          <div class="col-md-12 col-lg-12 col-xl-12">
+            <div id="plotly_series">
+            </div>
+          </div>
       </div>
-    </div>
-    <br>
-    <div>
-      <span id="status">Connecting...</span>
-    </div>
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
-    <script src="./frontend.js"></script>
-  </body>
+      <hr>
+      <div class="row">
+        <p>
+          <a class="btn btn-primary" data-toggle="collapse" href="#configuration" role="button" aria-expanded="false" aria-controls="configuration"> Configuration </a>
+        </p>
+      </div>
+      <div class="row">
+          <div class="col-md-8 col-lg-6 col-xl-5" id="configuration">
+            <div class="form-group">
+              <label for="hostInput">Host</label>
+              <input type="text" class="form-control" id="hostInput" aria-describedby="hostHelp" placeholder="192.168.178.30">
+              <small id="hostHelp" class="form-text text-muted"The host where mumble is running</small>
+            </div>
+            <div class="form-group">
+              <label for="portInput">Port</label>
+              <input type="text" class="form-control" id="portInput" aria-describedby="portHelp" placeholder="8080">
+              <small id="portHelp" class="form-text text-muted"The port where mumble is running</small>
+            </div>
+            <div class="form-group">
+              <button class="btn btn-success">Connect</button>
+              <button class="btn btn-danger">Disconnect</button>
+            </div>
+          </div>
+      </div>
+      <hr>
+
+      <footer>
+          <div class="row">
+              <div class="col-md-6">
+                  <p>
+                    <a href="#" class="text-dark">Read more</a>
+                    <span class="text-muted mx-2"> | </span>
+                    <a href="#" class="text-dark">Source code</a>
+                  </p>
+              </div>
+              <div class="col-md-6 text-md-right">
+                  <span class="text-muted mx-2">Thanks to <a href="#" class="text-dark">Bootstrap</a> for giving me a sample layout</span>
+              </div>
+          </div>
+      </footer>
+  </div>
+  <script src="./src/frontend.js"></script>
+</body>
 </html>

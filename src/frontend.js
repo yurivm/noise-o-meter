@@ -2,8 +2,9 @@ $(function () {
   // if user is running mozilla then use it's built-in WebSocket
   window.WebSocket = window.WebSocket || window.MozWebSocket;
   const wsServerUri = "ws://192.168.178.30:8080";
+
   const timerDelay = 250;
-  var connection = new WebSocket(wsServerUri);
+  const connection = new WebSocket(wsServerUri);
 
   var energyAverages = [];
   var prevEnergyAverage = 0;
@@ -36,7 +37,7 @@ $(function () {
         type: "indicator",
         mode: "gauge+number+delta",
         value: avg,
-        title: {text: 'Noise Level', font: {size: 24}},
+        title: {text: 'Noise Level', font: {size: 20}},
         delta: { reference: prevEnergyAverage },
         gauge: {
           axis: {
@@ -45,34 +46,9 @@ $(function () {
             tickcolor: "darkblue"
           },
           bar: { color: barColor },
-          // steps: [
-          //   { range: [0, 25], color: "green" },
-          //   { range: [25, 60], color: "yellow" },
-          //   { range: [60, 80], color: "red" },
-          // ],
         },
         domain: { row: 0, column: 0 }
       },
-      // {
-      //   type: "indicator",
-      //   value: avg,
-      //   gauge: {
-      //     shape: "bullet",
-      //     axis: {
-      //       visible: false,
-      //       range: [0, 25]
-      //     }
-      //   },
-      //   domain: { x: [0.1, 0.5], y: [0.15, 0.35] }
-      // },
-      // {
-      //   type: "indicator",
-      //   mode: "number+delta",
-      //   value: avg,
-      //   delta: { reference: prevEnergyAverage },
-      //   domain: { row: 0, column: 1 }
-      // },
-      // { type: "indicator", mode: "delta", value: delta, title: "Noise Level Delta", domain: { row: 1, column: 1 } }
     ];
   }
 
@@ -94,13 +70,22 @@ $(function () {
     return intensities;
   };
 
+  const calcMean = function() {
+    return energyAverages.reduce((a,b) => a + b, 0) / energyAverages.length;
+  };
+
+  const calcStdDev = function(mean, length) {
+    return Math.sqrt(energyAverages.reduce((sq,b) => sq + (b - mean) * (b - mean)) / length);
+  };
+
   const updateEnergy = function() {
-    const energyAverage = energyAverages.reduce((a,b) => a + b, 0) / energyAverages.length;
+    const energyAverage = calcMean();
+    const stdDev = calcStdDev(energyAverage, energyAverages.length);
     energyAverages = [];
     // $('#e span').text(energyAverage.toFixed(3));
-    updatePlotly(energyAverage, prevEnergyAverage);
+    updatePlotly(energyAverage, prevEnergyAverage, stdDev);
+    // updateHighcharts(energyAverage, prevEnergyAverage, stdDev);
     prevEnergyAverage = energyAverage;
-    //setTimeout(updateEnergy, timerDelay);
   }
 
   connection.onopen = function () {
@@ -119,11 +104,9 @@ $(function () {
     try {
       let msg = JSON.parse(message.data);
       let eNorm = normalizeEnergy(msg.src);
-      //normalizeEnergy(msg.src);
-      // console.log(eNorm);
-      // energyAverages.push(Math.sqrt(eNorm) * 66);
       if (eNorm !== undefined) {
-        energyAverages.push(Math.sqrt(eNorm) * 100);
+        eNorm = Math.sqrt(eNorm);
+        energyAverages.push(150 * eNorm);
       }
       //console.log(energyAverages);
     } catch (e) {
