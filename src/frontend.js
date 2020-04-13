@@ -8,8 +8,6 @@ $(function () {
     return "ws://" + wsHost + ":" + wsPort;
   }
 
-  const timerDelay = 250;
-
   const WsConnection = function() {
     const connection = new WebSocket(getWsUri());
     connection.onopen = function () {
@@ -32,14 +30,8 @@ $(function () {
       // from server is json)
       try {
         let msg = JSON.parse(message.data);
-        let event = new CustomEvent('data-received',{ bubbles: true, detail: { msg: msg}});
+        let event = new CustomEvent('data-received', { bubbles: true, detail: { msg: msg}});
         container.dispatchEvent(event);
-        // let eNorm = normalizeEnergy(msg.src);
-        // if (eNorm !== undefined) {
-        //   eNorm = Math.sqrt(eNorm);
-        //   energyAverages.push(150 * eNorm);
-        // }
-        //console.log(energyAverages);
       } catch (e) {
         console.log(e);
         console.log(message.data);
@@ -50,8 +42,73 @@ $(function () {
     return connection;
   }
 
-  let socket = WsConnection();
+  const Dashboard = function() {
+    // plotly layout
+    let layout = {
+      width: 720,
+      height: 400,
+      margin: { t: 25, b: 25, l: 25, r: 25 },
+      grid: { rows: 1, columns: 2, pattern: "independent" },
+      template: {
+        data: {
+        }
+      }
+    };
 
+    let pointsCount = 0;
+    const pointsThreshold = 200;
+
+    const plotly = Plotly.newPlot('plotly', 0, layout);
+    const plotlySeries = Plotly.plot('plotly_series',[{ y: [0], type: 'line'}]);
+
+    const plotlyData = function(energyAverage, prevEnergyAverage) {
+      const avg = energyAverage.toFixed(3);
+      const delta = (energyAverage - prevEnergyAverage ).toFixed(3);
+
+      let barColor = "green";
+      if (avg >= 25 && avg < 60) {
+        barColor = "yellow"
+      } else if (avg >= 60) {
+        barColor = "red";
+      }
+
+      return [
+        {
+          type: "indicator",
+          mode: "gauge+number+delta",
+          value: avg,
+          title: {text: 'Noise Level', font: {size: 20}},
+          delta: { reference: prevEnergyAverage },
+          gauge: {
+            axis: {
+              range: [0, 80],
+              tickwidth: 1,
+              tickcolor: "darkblue"
+            },
+            bar: { color: barColor },
+          },
+          domain: { row: 0, column: 0 }
+        },
+      ];
+    };
+
+    return {
+      updatePlotly: function(energyAverage, prevEnergyAverage) {
+        const data = plotlyData(energyAverage, prevEnergyAverage);
+        Plotly.react('plotly', data, layout);
+        Plotly.extendTraces('plotly_series',{y: [[energyAverage]]}, [0]);
+        pointsCount++;
+        if (pointsCount > pointsThreshold) {
+          Plotly.relayout('plotly_series', {xaxis: { range: [pointsCount - pointsThreshold, pointsCount]}})
+        }
+      }
+    }
+  }
+
+  let socket = WsConnection();
+  let noiseDashboard = Dashboard();
+
+  const timerDelay = 250;
   let energyAverages = [];
   let prevEnergyAverage = 0;
 
@@ -68,46 +125,6 @@ $(function () {
       }
     }
   };
-
-  function plotlyData(energyAverage, prevEnergyAverage) {
-    const avg = energyAverage.toFixed(3);
-    const delta = (energyAverage - prevEnergyAverage ).toFixed(3);
-    let barColor = "green";
-    if (avg >= 25 && avg < 60) {
-      barColor = "yellow"
-    } else if (avg >= 60) {
-      barColor = "red";
-    }
-
-    return [
-      {
-        type: "indicator",
-        mode: "gauge+number+delta",
-        value: avg,
-        title: {text: 'Noise Level', font: {size: 20}},
-        delta: { reference: prevEnergyAverage },
-        gauge: {
-          axis: {
-            range: [0, 80],
-            tickwidth: 1,
-            tickcolor: "darkblue"
-          },
-          bar: { color: barColor },
-        },
-        domain: { row: 0, column: 0 }
-      },
-    ];
-  }
-
-  const updatePlotly = function(energyAverage, prevEnergyAverage) {
-    const data = plotlyData(energyAverage, prevEnergyAverage);
-    Plotly.react('plotly', data, layout);
-    Plotly.extendTraces('plotly_series',{y: [[energyAverage]]}, [0]);
-    pointsCount++;
-    if (pointsCount > pointsThreshold) {
-      Plotly.relayout('plotly_series', {xaxis: { range: [pointsCount - pointsThreshold, pointsCount]}})
-    }
-  }
 
   const normalizeEnergy = function(src) {
     let intensities = 0.0;
@@ -126,12 +143,11 @@ $(function () {
   };
 
   const updateEnergy = function() {
-    console.log(energyAverages.length);
     const energyAverage = calcMean();
     const stdDev = calcStdDev(energyAverage, energyAverages.length);
     energyAverages = [];
     // $('#e span').text(energyAverage.toFixed(3));
-    updatePlotly(energyAverage, prevEnergyAverage, stdDev);
+    noiseDashboard.updatePlotly(energyAverage, prevEnergyAverage, stdDev);
     // updateHighcharts(energyAverage, prevEnergyAverage, stdDev);
     prevEnergyAverage = energyAverage;
   };
@@ -146,9 +162,6 @@ $(function () {
       energyAverages.push(eNorm);
     }
   });
-
-  Plotly.newPlot('plotly', plotlyData(0,0), layout);
-  Plotly.plot('plotly_series',[{ y: [0], type: 'line'}]);
 
   $('#connectBtn').click(function() { socket = WsConnection()});
   $('#disconnectBtn').click(function() { socket.close(); clearInterval(updateInterval); });
