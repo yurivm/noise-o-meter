@@ -105,61 +105,56 @@ $(function () {
     }
   }
 
-  let socket = WsConnection();
-  let noiseDashboard = Dashboard();
+  const statCalc = function() {
+    let energyAverages = [];
+    let prevEnergyAverage = 0;
+    const normalizeEnergy = function(src) {
+      let intensities = 0.0;
+      src.forEach(function(x) {
+        intensities = intensities + x.E * x.E;
+      });
+      return intensities;
+    };
 
-  const timerDelay = 250;
-  let energyAverages = [];
-  let prevEnergyAverage = 0;
+    const calcMean = function() {
+      return energyAverages.reduce((a,b) => a + b, 0) / energyAverages.length;
+    };
 
-  let pointsCount = 0;
-  const pointsThreshold = 200;
-  // trying out plotly
-  let layout = {
-    width: 720,
-    height: 400,
-    margin: { t: 25, b: 25, l: 25, r: 25 },
-    grid: { rows: 1, columns: 2, pattern: "independent" },
-    template: {
-      data: {
-      }
+    const calcStdDev = function(mean, length) {
+      return Math.sqrt(energyAverages.reduce((sq,b) => sq + (b - mean) * (b - mean)) / length);
+    };
+
+    const updateEnergy = function() {
+      const energyAverage = calcMean();
+      const stdDev = calcStdDev(energyAverage, energyAverages.length);
+      // $('#e span').text(energyAverage.toFixed(3));
+      noiseDashboard.updatePlotly(energyAverage, prevEnergyAverage, stdDev);
+      // updateHighcharts(energyAverage, prevEnergyAverage, stdDev);
+      prevEnergyAverage = energyAverage;
+      energyAverages.length = 0;
+    };
+
+    return {
+      updateEnergy: updateEnergy,
+      normalizeEnergy: normalizeEnergy,
+      energyAverages: energyAverages
     }
   };
 
-  const normalizeEnergy = function(src) {
-    let intensities = 0.0;
-    src.forEach(function(x) {
-      intensities = intensities + x.E * x.E;
-    });
-    return intensities;
-  };
+  let socket = WsConnection();
+  let noiseDashboard = Dashboard();
+  const stats = statCalc();
 
-  const calcMean = function() {
-    return energyAverages.reduce((a,b) => a + b, 0) / energyAverages.length;
-  };
+  const timerDelay = 250;
 
-  const calcStdDev = function(mean, length) {
-    return Math.sqrt(energyAverages.reduce((sq,b) => sq + (b - mean) * (b - mean)) / length);
-  };
-
-  const updateEnergy = function() {
-    const energyAverage = calcMean();
-    const stdDev = calcStdDev(energyAverage, energyAverages.length);
-    energyAverages = [];
-    // $('#e span').text(energyAverage.toFixed(3));
-    noiseDashboard.updatePlotly(energyAverage, prevEnergyAverage, stdDev);
-    // updateHighcharts(energyAverage, prevEnergyAverage, stdDev);
-    prevEnergyAverage = energyAverage;
-  };
-
-  let updateInterval = setInterval(updateEnergy, timerDelay);
+  let updateInterval = setInterval(stats.updateEnergy, timerDelay);
 
   container.addEventListener('data-received', function(event) {
     let msg = event.detail.msg;
-    let eNorm = normalizeEnergy(msg.src);
+    let eNorm = stats.normalizeEnergy(msg.src);
     if (eNorm !== undefined) {
       eNorm = Math.sqrt(eNorm) * 150;
-      energyAverages.push(eNorm);
+      stats.energyAverages.push(eNorm);
     }
   });
 
