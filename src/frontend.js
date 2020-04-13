@@ -1,18 +1,64 @@
 $(function () {
   // if user is running mozilla then use it's built-in WebSocket
   window.WebSocket = window.WebSocket || window.MozWebSocket;
-  const wsServerUri = "ws://192.168.178.30:8080";
+
+  const getWsUri = function() {
+    let wsHost = $('#hostInput').val() || '192.168.178.30';
+    let wsPort = $('#portInput').val() || '8080';
+    return "ws://" + wsHost + ":" + wsPort;
+  }
 
   const timerDelay = 250;
-  const connection = new WebSocket(wsServerUri);
 
-  var energyAverages = [];
-  var prevEnergyAverage = 0;
+  const WsConnection = function() {
+    const connection = new WebSocket(getWsUri());
+    connection.onopen = function () {
+      // connection is opened and ready to use
+      $('#status').replaceWith("connected to " + getWsUri());
+    };
 
-  var pointsCount = 0;
+    connection.onerror = function (error) {
+      // an error occurred when sending/receiving data
+      $('#status').replaceWith("error!");
+    };
+
+    connection.onclose = function (error) {
+      // an error occurred when sending/receiving data
+      $('#status').replaceWith("Disconnected");
+    };
+
+    connection.onmessage = function (message) {
+      // try to decode json (I assume that each message
+      // from server is json)
+      try {
+        let msg = JSON.parse(message.data);
+        let event = new CustomEvent('data-received',{bubbles: true, detail: { msg: msg}});
+        container.dispatchEvent(event);
+        let eNorm = normalizeEnergy(msg.src);
+        if (eNorm !== undefined) {
+          eNorm = Math.sqrt(eNorm);
+          energyAverages.push(150 * eNorm);
+        }
+        //console.log(energyAverages);
+      } catch (e) {
+        console.log(e);
+        console.log(message.data);
+        return;
+      }
+      // handle incoming message
+    };
+    return connection;
+  }
+
+  let socket = WsConnection();
+
+  let energyAverages = [];
+  let prevEnergyAverage = 0;
+
+  let pointsCount = 0;
   const pointsThreshold = 200;
   // trying out plotly
-  var layout = {
+  let layout = {
     width: 720,
     height: 400,
     margin: { t: 25, b: 25, l: 25, r: 25 },
@@ -22,6 +68,7 @@ $(function () {
       }
     }
   };
+
   function plotlyData(energyAverage, prevEnergyAverage) {
     const avg = energyAverage.toFixed(3);
     const delta = (energyAverage - prevEnergyAverage ).toFixed(3);
@@ -86,38 +133,16 @@ $(function () {
     updatePlotly(energyAverage, prevEnergyAverage, stdDev);
     // updateHighcharts(energyAverage, prevEnergyAverage, stdDev);
     prevEnergyAverage = energyAverage;
-  }
-
-  connection.onopen = function () {
-    // connection is opened and ready to use
-    $('#status').replaceWith("<h4>connected to " + wsServerUri + "</h4>");
   };
 
-  connection.onerror = function (error) {
-    // an error occurred when sending/receiving data
-    $('#status').replaceWith("<h4>error!</h4>");
-  };
-
-  connection.onmessage = function (message) {
-    // try to decode json (I assume that each message
-    // from server is json)
-    try {
-      let msg = JSON.parse(message.data);
-      let eNorm = normalizeEnergy(msg.src);
-      if (eNorm !== undefined) {
-        eNorm = Math.sqrt(eNorm);
-        energyAverages.push(150 * eNorm);
-      }
-      //console.log(energyAverages);
-    } catch (e) {
-      console.log(e);
-      console.log(message.data);
-      return;
-    }
-    // handle incoming message
-  };
   setInterval(updateEnergy, timerDelay);
+  container.addEventListener('data-received', function(event) {
+    console.log(event.detail.msg);
+
+  });
   Plotly.newPlot('plotly', plotlyData(0,0), layout);
   Plotly.plot('plotly_series',[{ y: [0], type: 'line'}]);
 
+  $('#connectBtn').click(function() { socket = WsConnection()});
+  $('#disconnectBtn').click(function() { socket.close() });
 });
