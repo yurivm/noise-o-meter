@@ -32,13 +32,13 @@ $(function () {
       // from server is json)
       try {
         let msg = JSON.parse(message.data);
-        let event = new CustomEvent('data-received',{bubbles: true, detail: { msg: msg}});
+        let event = new CustomEvent('data-received',{ bubbles: true, detail: { msg: msg}});
         container.dispatchEvent(event);
-        let eNorm = normalizeEnergy(msg.src);
-        if (eNorm !== undefined) {
-          eNorm = Math.sqrt(eNorm);
-          energyAverages.push(150 * eNorm);
-        }
+        // let eNorm = normalizeEnergy(msg.src);
+        // if (eNorm !== undefined) {
+        //   eNorm = Math.sqrt(eNorm);
+        //   energyAverages.push(150 * eNorm);
+        // }
         //console.log(energyAverages);
       } catch (e) {
         console.log(e);
@@ -126,6 +126,7 @@ $(function () {
   };
 
   const updateEnergy = function() {
+    console.log(energyAverages.length);
     const energyAverage = calcMean();
     const stdDev = calcStdDev(energyAverage, energyAverages.length);
     energyAverages = [];
@@ -135,14 +136,20 @@ $(function () {
     prevEnergyAverage = energyAverage;
   };
 
-  setInterval(updateEnergy, timerDelay);
-  container.addEventListener('data-received', function(event) {
-    console.log(event.detail.msg);
+  let updateInterval = setInterval(updateEnergy, timerDelay);
 
+  container.addEventListener('data-received', function(event) {
+    let msg = event.detail.msg;
+    let eNorm = normalizeEnergy(msg.src);
+    if (eNorm !== undefined) {
+      eNorm = Math.sqrt(eNorm) * 150;
+      energyAverages.push(eNorm);
+    }
   });
+
   Plotly.newPlot('plotly', plotlyData(0,0), layout);
   Plotly.plot('plotly_series',[{ y: [0], type: 'line'}]);
 
   $('#connectBtn').click(function() { socket = WsConnection()});
-  $('#disconnectBtn').click(function() { socket.close() });
+  $('#disconnectBtn').click(function() { socket.close(); clearInterval(updateInterval); });
 });
