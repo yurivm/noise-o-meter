@@ -1,6 +1,6 @@
 # Noise-o-meter
 
-A sample noise dashboard project as described in this medium article (insert link when done).
+A sample noise dashboard project as described in this [medium article](https://medium.com/homeday/building-a-noise-level-dashboard-for-your-office-with-a-raspberry-pi-71360ee1ff46?sk=652de93b0eaf5361133f5638970cfde7).
 
 ![the mumble diagram](doc/mumble_diagram.png)
 
