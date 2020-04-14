@@ -2,7 +2,7 @@
 
 A sample noise dashboard project as described in this medium article (insert link when done).
 
-![](doc/mumble_diagram.png)
+![the mumble diagram](doc/mumble_diagram.png)
 
 ## Setup
 
@@ -24,6 +24,13 @@ const getWsUri = function() {
 - the WebSocket `onmessage` callback parses JSON messages
 - for each JSON message,a `CustomEvent` called `data-received` is dispatched with sound level data
 - the event handler collects the data and updates the Plot.ly dashboards
+
+
+## How it looks
+
+![the noise meter](doc/noise_o_meter.png)
+
+![time series](doc/noise_graph_800.gif)
 
 ## Contributing
 
